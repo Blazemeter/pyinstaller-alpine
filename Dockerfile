@@ -1,10 +1,10 @@
 ARG ARCH=""
-ARG ALPINE_VERSION="3.6"
+ARG ALPINE_VERSION="3.7"
 
 FROM ${ARCH}python:${ALPINE_VERSION}-alpine
 
 ARG PYINSTALLER_TAG
-ENV PYINSTALLER_TAG ${PYINSTALLER_TAG:-"v3.4"}
+ENV PYINSTALLER_TAG ${PYINSTALLER_TAG:-"v3.5"}
 
 # Official Python base image is needed or some applications will segfault.
 # PyInstaller needs zlib-dev, gcc, libc-dev, and musl-dev
