@@ -16,6 +16,7 @@ RUN apk --update --no-cache add \
     gcc \
     g++ \
     git \
+    make \
     pwgen \
     && pip install --upgrade pip
 
