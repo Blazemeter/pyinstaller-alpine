@@ -1,40 +1,45 @@
-ARG ARCH=""
-ARG ALPINE_VERSION="3.7"
+ARG VERSION_PYTHON
+ARG VERSION_ALPINE
 
-FROM ${ARCH}python:${ALPINE_VERSION}-alpine
+FROM python:${VERSION_PYTHON}-alpine${VERSION_ALPINE}
 
-ARG PYINSTALLER_TAG
-ENV PYINSTALLER_TAG ${PYINSTALLER_TAG:-"v3.5"}
+ARG VERSION_PYINSTALLER
+ARG TARGET_BIN_DIR
 
 # Official Python base image is needed or some applications will segfault.
 # PyInstaller needs zlib-dev, gcc, libc-dev, and musl-dev
 RUN apk --update --no-cache add \
+    libffi-dev \
     zlib-dev \
     musl-dev \
     libc-dev \
-    libffi-dev \
+    pwgen \
+    make \
     gcc \
     g++ \
-    git \
-    make \
-    pwgen \
-    && pip install --upgrade pip
+    git
 
 # Install pycrypto so --key can be used with PyInstaller
-RUN pip install \
+RUN pip install --upgrade pip \
+ && pip install \
     pycrypto
 
-# Build bootloader for alpine
-RUN git clone --depth 1 --single-branch --branch ${PYINSTALLER_TAG} https://github.com/pyinstaller/pyinstaller.git /tmp/pyinstaller \
-    && cd /tmp/pyinstaller/bootloader \
-    && CFLAGS="-Wno-stringop-overflow" python ./waf configure --no-lsb all \
-    && pip install .. \
-    && rm -Rf /tmp/pyinstaller
+ADD ./bin ${TARGET_BIN_DIR}
+RUN chmod a+x ${TARGET_BIN_DIR}/*
 
-VOLUME /src
+# Build bootloader for alpine
+ENV PYINSTALLER_TAG v${VERSION_PYINSTALLER}
+RUN git clone --depth 1 --single-branch --branch ${PYINSTALLER_TAG} https://github.com/pyinstaller/pyinstaller.git /tmp/pyinstaller \
+ && cd /tmp/pyinstaller/bootloader \
+ && CFLAGS="-Wno-stringop-overflow" python ./waf configure --no-lsb all \
+ && pip install .. \
+ && rm -Rf /tmp/pyinstaller
+
+# Fixed entrypoint script
+RUN echo '#!/bin/sh' > /entrypoint.sh \
+ && echo "exec ${TARGET_BIN_DIR}/pyinstaller.sh \$@" >> /entrypoint.sh \
+ && chmod a+x /entrypoint.sh
+
 WORKDIR /src
 
-ADD ./bin /pyinstaller
-RUN chmod a+x /pyinstaller/*
-
-ENTRYPOINT ["/pyinstaller/pyinstaller.sh"]
+ENTRYPOINT [ "/entrypoint.sh" ]

@@ -1,37 +1,24 @@
-.DEFAULT: all
-.PHONY: all
+REPOSITORY := blazemeter
+COMPONENT := pyinstaller-alpine
+VERSION_ALPINE := 3.10
+VERSION_PYTHON := 3.7
+VERSION_PYINSTALLER := 3.5
 
-REPOSITORY ?= six8
-NAME := pyinstaller-alpine
-PYINSTALLER_TAG := v3.4
-ALPINE_VERSION := 3.6
-BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
-SUFFIX ?= -$(subst /,-,$(BRANCH))
+TARGET_BIN_DIR := /pyinstaller
+DOCKER_TAG := "${REPOSITORY}/${COMPONENT}:${VERSION_PYINSTALLER}_${VERSION_PYTHON}"
 
-all: build
+help:  ## Show this help.
+	@tput bold; echo TARGETS; tput sgr0 && \
+	grep '.*:[^#]*  ##.*' $(MAKEFILE_LIST) | grep -v '\bgrep\b' | sed -E "s/([^:]+):.*##(.*)$$/  $(shell tput bold)\1$(shell tput sgr0): \2/g" \
+	| column -t -s ':'
 
-build: Dockerfile
-	@./build.sh "$(REPOSITORY)/$(NAME)-linux-amd64" "" "${PYINSTALLER_TAG}" "${ALPINE_VERSION}"
-	@./build.sh "$(REPOSITORY)/$(NAME)-linux-armv7" "arm32v7/" "${PYINSTALLER_TAG}" "${ALPINE_VERSION}"
-	@./build.sh "$(REPOSITORY)/$(NAME)-linux-arm64" "arm64v8/" "${PYINSTALLER_TAG}" "${ALPINE_VERSION}"
+build: Dockerfile  ## Build docker image
+	time docker build -t ${DOCKER_TAG} \
+		--build-arg VERSION_PYINSTALLER=${VERSION_PYINSTALLER} \
+		--build-arg VERSION_ALPINE=${VERSION_ALPINE} \
+		--build-arg VERSION_PYTHON=${VERSION_PYTHON} \
+		--build-arg TARGET_BIN_DIR=${TARGET_BIN_DIR} \
+		.
 
-push:
-	# Push docker images
-	docker push "$(REPOSITORY)/$(NAME)-linux-amd64:alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}"
-	docker push "$(REPOSITORY)/$(NAME)-linux-armv7:alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}"
-	docker push "$(REPOSITORY)/$(NAME)-linux-arm64:alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}"
-
-manifest:
-	# Manifest for alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}
-	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create -a "$(REPOSITORY)/$(NAME):alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}" \
-		"$(REPOSITORY)/$(NAME)-linux-amd64:alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}" \
-		"$(REPOSITORY)/$(NAME)-linux-armv7:alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}" \
-		"$(REPOSITORY)/$(NAME)-linux-arm64:alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}"
-	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push "$(REPOSITORY)/$(NAME):alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}"
-	# Manifest for $(REPOSITORY)/$(NAME):latest
-	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create -a "$(REPOSITORY)/$(NAME):latest" \
-		"$(REPOSITORY)/$(NAME)-linux-amd64:alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}" \
-		"$(REPOSITORY)/$(NAME)-linux-armv7:alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}" \
-		"$(REPOSITORY)/$(NAME)-linux-arm64:alpine-${ALPINE_VERSION}-pyinstaller-${PYINSTALLER_TAG}"
-	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push "$(REPOSITORY)/$(NAME):latest"
-
+push: build  ## Push docker images
+	@docker push "${DOCKER_TAG}"

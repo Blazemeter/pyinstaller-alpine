@@ -78,4 +78,4 @@ Building Docker Image
 
 If you'd like to build the Docker image yourself:
 
-    ./build.sh
+    make build
