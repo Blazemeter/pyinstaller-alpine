@@ -17,7 +17,9 @@ RUN apk --update --no-cache add \
     make \
     gcc \
     g++ \
-    git
+    git \
+    rust \
+    cargo
 
 # Install pycrypto so --key can be used with PyInstaller
 RUN pip install --upgrade pip \

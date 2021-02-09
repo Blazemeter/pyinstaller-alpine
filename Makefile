@@ -1,6 +1,6 @@
-REPOSITORY := blazemeter
+REPOSITORY := us.gcr.io/verdant-bulwark-278/builder
 COMPONENT := pyinstaller-alpine
-VERSION_ALPINE := 3.10
+VERSION_ALPINE := 3.13
 VERSION_PYTHON := 3.7
 VERSION_PYINSTALLER := 3.5
 
