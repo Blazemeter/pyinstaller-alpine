@@ -22,9 +22,7 @@ RUN apk --update --no-cache add \
     cargo
 
 # Install pycrypto so --key can be used with PyInstaller
-RUN pip install --upgrade pip \
- && pip install \
-    pycrypto
+RUN pip install --upgrade pip
 
 ADD ./bin ${TARGET_BIN_DIR}
 RUN chmod a+x ${TARGET_BIN_DIR}/*
@@ -33,7 +31,7 @@ RUN chmod a+x ${TARGET_BIN_DIR}/*
 ENV PYINSTALLER_TAG v${VERSION_PYINSTALLER}
 RUN git clone --depth 1 --single-branch --branch ${PYINSTALLER_TAG} https://github.com/pyinstaller/pyinstaller.git /tmp/pyinstaller \
  && cd /tmp/pyinstaller/bootloader \
- && CFLAGS="-Wno-stringop-overflow" python ./waf configure --no-lsb all \
+ && python ./waf all \
  && pip install .. \
  && rm -Rf /tmp/pyinstaller
 
